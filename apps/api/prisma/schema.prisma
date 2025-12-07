@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  admin
+}
+
+enum PlanStatus {
+  completed
+  in_progress
+  planned
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(student)
+  createdAt    DateTime @default(now())
+  plans        StudentPlan[]
+  messages     ChatMessage[]
+}
+
+model Course {
+  id               String    @id @default(uuid())
+  code             String
+  title            String
+  credits          Int
+  instructor       String?
+  schedule         String?
+  description      String?
+  learningOutcomes String?
+  department       String?
+  isActive         Boolean   @default(true)
+  crossListedWith  Json?
+  requirementItems RequirementItem[]
+  plans            StudentPlan[]
+  messages         ChatMessage[]
+}
+
+model RequirementGroup {
+  id               String             @id @default(uuid())
+  name             String
+  type             String
+  majorOrMinorKey  String?
+  creditsRequired  Int
+  notes            String?
+  requirementItems RequirementItem[]
+}
+
+model RequirementItem {
+  id                  String            @id @default(uuid())
+  requirementGroupId  String
+  courseId            String
+  isOptional          Boolean   @default(false)
+  bucket              String?
+  requirementGroup    RequirementGroup @relation(fields: [requirementGroupId], references: [id])
+  course              Course            @relation(fields: [courseId], references: [id])
+}
+
+model StudentPlan {
+  id        String     @id @default(uuid())
+  userId    String
+  courseId  String
+  status    PlanStatus
+  grade     String?
+  semester  String
+  year      Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id])
+  course    Course     @relation(fields: [courseId], references: [id])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  courseId  String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+}
